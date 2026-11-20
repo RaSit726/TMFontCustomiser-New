@@ -6,6 +6,8 @@
 // @match        *://*/*
 // @grant        GM_addStyle
 // @grant        GM_addElement
+// @grant        GM_xmlhttpRequest
+// @connect      *
 // ==/UserScript==
 
 (function() {
@@ -16,12 +18,47 @@
         "https://fonts.cdnfonts.com/css/open-sans",
         "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
     ];
-    links.forEach(url => {
-        let link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = url;
-        document.head.appendChild(link);
+
+    links.forEach(cssUrl => {
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url: cssUrl,
+            onload: async (response) => {
+                let cssText = response.responseText;
+                const urlRegex = /url\(['"]?([^'")]+)['"]?\)/g;
+                const matches = [...cssText.matchAll(urlRegex)];
+
+                for (const match of matches) {
+                    const fullMatch = match[0];
+                    const rawPath = match[1];
+                    if (rawPath.startsWith('data:')) continue;
+                    const absoluteFontUrl = new URL(rawPath, cssUrl).href;
+                    const dataUri = await fetchAsDataURL(absoluteFontUrl);
+                    if (dataUri) {
+                        cssText = cssText.replace(fullMatch, `url('${dataUri}')`);
+                    }
+                }
+
+                GM_addStyle(cssText);
+            }
+        });
     });
+
+    function fetchAsDataURL(url) {
+        return new Promise((resolve) => {
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: url,
+                responseType: 'blob',
+                onload: (res) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(res.response);
+                },
+                onerror: () => resolve(null)
+            });
+        });
+    }
 
     function createFontCustomiserBox() {
         let fontCustomiserBox = document.createElement('div');
@@ -37,6 +74,19 @@
         fontCustomiserBox.style.fontSize = '14px';
         fontCustomiserBox.style.display = 'none';
         return fontCustomiserBox;
+    }
+
+    function createStrengthSelect() {
+        let strengthLabel = document.createElement('label');
+        strengthLabel.style.paddingRight = '5px';
+        strengthLabel.innerText = 'Strength: ';
+        let strengthSelect = document.createElement('select');
+        strengthSelect.innerHTML = `
+            <option value=0>Soft</option>
+            <option value=1>Force</option>
+            <option value=2>Nuclear Option</option>
+        `;
+        return { strengthLabel, strengthSelect};
     }
 
     function createFontSelect() {
@@ -58,6 +108,7 @@
             <option value="Calibri, sans-serif">Calibri</option>
             <option value="'Open Sans', sans-serif">Open Sans</option>
             <option value="Helvetica, sans-serif">Helvetica</option>
+            <option value="OpenDyslexic, sans-serif">Open Dyslexic (As System Font)</option>
         `;
         return { fontLabel, fontSelect };
     }
@@ -101,29 +152,31 @@
         return { fontSizeLabel, fontSizeSlider };
     }
 
-    function applyFontSettings(fontSelect, lineSpacingSlider, letterSpacingSlider, fontSizeSlider) {
-        let selectedFont = fontSelect.value;
-        let selectedLineSpacing = lineSpacingSlider.value;
-        let selectedLetterSpacing = letterSpacingSlider.value;
-        let selectedFontSize = fontSizeSlider.value;
-    
-        let fontStyle = '';
+    function fetchRawCSS(url) {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: url,
+                onload: (response) => resolve(response.responseText),
+                onerror: (err) => reject(err)
+            });
+        });
+    }
 
-        if (selectedFont !== 'none') {
-            fontStyle += `font-family: ${selectedFont} !important; `;
+    function CSSModifier(CSSFile, font) {
+        return CSSFile.replace(/font-family\s*:[^;\}]+/gi, `font-family: ${font} !important`);
+    }
+
+    function variableStrengthStyleAdder(fontStyle, string, overrideAllCSSFiles, selectedFont) {
+
+        let styleTag = document.getElementById('font-customiser-injected-style');
+        if (!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.id = 'font-customiser-injected-style';
+            document.head.appendChild(styleTag);
         }
-        if (selectedLineSpacing) {
-            fontStyle += `line-height: ${selectedLineSpacing} !important; `;
-        }
-        if (selectedLetterSpacing) {
-            fontStyle += `letter-spacing: ${selectedLetterSpacing}px !important; `;
-        }
-        if (selectedFontSize) {
-            fontStyle += `font-size: ${selectedFontSize}px !important; `;
-        }
-    
-        GM_addStyle(`
-            body {
+        styleTag.textContent = `
+            ${string} {
                 ${fontStyle}
             }
             #font-customisation-box {
@@ -140,12 +193,69 @@
                 background-color: #E30B5D !important;
                 color: white !important;
             }
-        `);
+        `;
+
+        if (overrideAllCSSFiles && selectedFont !== 'none') {
+            for (const sheet of document.styleSheets) {
+                try {
+                    const rules = sheet.cssRules;
+                    for (const rule of rules) {
+                        if (rule.style) {
+                            rule.style.setProperty('font-family', selectedFont, 'important');
+                        }
+                    }
+                } catch (e) {
+                    console.log('Cross origin stylesheet:', sheet.href, ' Handling.');
+                    const linkElement = sheet.ownerNode;
+                    if (sheet.href) {
+                        fetchRawCSS(sheet.href).then(rawCSS => CSSModifier(rawCSS, selectedFont)).then(modifiedCSS => {
+                            const blob = new Blob([modifiedCSS], { type: 'text/css' });
+                            const virtualFileUrl = URL.createObjectURL(blob);
+                            if (linkElement) {
+                                linkElement.removeAttribute('integrity');
+                                linkElement.href = virtualFileUrl;
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    function applyFontSettings(fontSelect, lineSpacingSlider, letterSpacingSlider, fontSizeSlider, strengthSelect) {
+        let selectedFont = fontSelect.value;
+        let selectedLineSpacing = lineSpacingSlider.value;
+        let selectedLetterSpacing = letterSpacingSlider.value;
+        let selectedFontSize = fontSizeSlider.value;
+        let selectedStrength = strengthSelect.value;
+
+        let fontStyle = '';
+
+        if (selectedFont !== 'none') {
+            fontStyle += `font-family: ${selectedFont} !important; `;
+        }
+        if (selectedLineSpacing) {
+            fontStyle += `line-height: ${selectedLineSpacing} !important; `;
+        }
+        if (selectedLetterSpacing) {
+            fontStyle += `letter-spacing: ${selectedLetterSpacing}px !important; `;
+        }
+        if (selectedFontSize) {
+            fontStyle += `font-size: ${selectedFontSize}px !important; `;
+        }
+
+        if (selectedStrength == 0) {
+            variableStrengthStyleAdder(fontStyle, `body`, false);
+        } else if (selectedStrength == 1) {
+            variableStrengthStyleAdder(fontStyle, `:root:root:root *:not(i):not(.fa):not(.material-icons):not([class*="icon"])`, false);
+        } else if (selectedStrength == 2) {
+            variableStrengthStyleAdder(fontStyle, `:root:root:root *:not(i):not(.fa):not(.material-icons):not([class*="icon"])`, true, selectedFont);
+        }
     }
 
     function createHoverButton() {
         let hoverButton = document.createElement('div');
-        hoverButton.id = 'font-customizer-hover-button'; 
+        hoverButton.id = 'font-customizer-hover-button';
         hoverButton.innerHTML = '<i class="fa-solid fa-font"></i>';
         hoverButton.style.position = 'fixed';
         hoverButton.style.bottom = '10px';
@@ -179,10 +289,16 @@
         let fontCustomiserBox = createFontCustomiserBox();
         fontCustomiserBox.id = 'font-customisation-box';
 
+        let { strengthLabel, strengthSelect } = createStrengthSelect();
         let { fontLabel, fontSelect } = createFontSelect();
         let { lineSpacingLabel, lineSpacingSlider } = createLineSpacingSlider();
         let { letterSpacingLabel, letterSpacingSlider } = createLetterSpacingSlider();
         let { fontSizeLabel, fontSizeSlider } = createFontSizeSlider();
+
+        fontCustomiserBox.appendChild(strengthLabel);
+        fontCustomiserBox.appendChild(strengthSelect);
+        fontCustomiserBox.appendChild(document.createElement('br'));
+        fontCustomiserBox.appendChild(document.createElement('br'));
 
         fontCustomiserBox.appendChild(fontLabel);
         fontCustomiserBox.appendChild(fontSelect);
@@ -201,17 +317,20 @@
         fontCustomiserBox.appendChild(fontSizeSlider);
         fontCustomiserBox.appendChild(document.createElement('br'));
 
+        strengthSelect.addEventListener('change', function() {
+            applyFontSettings(fontSelect, lineSpacingSlider, letterSpacingSlider, fontSizeSlider, strengthSelect);
+        });
         fontSelect.addEventListener('change', function() {
-            applyFontSettings(fontSelect, lineSpacingSlider, letterSpacingSlider, fontSizeSlider);
+            applyFontSettings(fontSelect, lineSpacingSlider, letterSpacingSlider, fontSizeSlider, strengthSelect);
         });
         lineSpacingSlider.addEventListener('input', function() {
-            applyFontSettings(fontSelect, lineSpacingSlider, letterSpacingSlider, fontSizeSlider);
+            applyFontSettings(fontSelect, lineSpacingSlider, letterSpacingSlider, fontSizeSlider, strengthSelect);
         });
         letterSpacingSlider.addEventListener('input', function() {
-            applyFontSettings(fontSelect, lineSpacingSlider, letterSpacingSlider, fontSizeSlider);
+            applyFontSettings(fontSelect, lineSpacingSlider, letterSpacingSlider, fontSizeSlider, strengthSelect);
         });
         fontSizeSlider.addEventListener('input', function() {
-            applyFontSettings(fontSelect, lineSpacingSlider, letterSpacingSlider, fontSizeSlider);
+            applyFontSettings(fontSelect, lineSpacingSlider, letterSpacingSlider, fontSizeSlider, strengthSelect);
         });
         document.body.appendChild(fontCustomiserBox);
     }
