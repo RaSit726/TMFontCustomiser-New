@@ -28,14 +28,43 @@ The script will automatically run on the websites that you visit.
 
 ### Changes
 - Switched from linking the fonts from the CDNs themselves to saving as files, fixing (some) font-src errors on (some) websites.
-- Added an option for loading OpenDyslexic as a system font (since loading system fonts shouldn't cause font-src errors)
+- Added an option for loading OpenDyslexic as a system font
 - Added 3 escalation levels:
-  - Soft: Only modifies body {}
-  - Force: Modifies pretty much everything
+  - Soft: Only modifies body {}.
+  - Force: Modifies pretty much everything.
   - Nuclear Option: Takes the CSS file from the website, and manually horrifically mangles and REGEXes out every different font for your wanted font. (may cause broken pages)
 
 ### Installation
-- Copy and pasting is difficult, trust me bro. Do this instead:
+- Selecting all, then copy and pasting is difficult, trust me bro. Take this instead:
+`https://raw.githubusercontent.com/RaSit726/TMFontCustomiser-New/refs/heads/main/TMCustomFont.js`
+- Go into your Tampermonkey dashboard.
+- Then into the tab "utilities" (right hand side).
+- Paste in the link to into the box labeled "Import from URL".
+- Click install. It is right of the input box.
+- You now have the script installed. Make sure to give Tampermonkey the appropriate permissions too, and if it asks you to allow to download, look at the URL, and if it looks like something about fonts, allow them then.
+
+Namely,
+```
+"https://fonts.cdnfonts.com/css/open-dyslexic",
+"https://fonts.cdnfonts.com/css/open-sans",
+"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
 ```
 
-```
+### Prerequsites
+- For the "Open Dyslexic (As System Font)" option, you need to have OpenDyslexic installed, recognized, and loadable by your system.
+  - Why should you use it in favor of the other option?
+    - loading system fonts causes many less font-src errors. Strict websites may enforce that their fonts may only come from their CDNs. Even if you set strength to "Nuclear Option".
+  - I tested it only with this OpenDyslexic font: `https://antijingoist.itch.io/opendyslexic`
+  - You can donate to their project. It's the first thing you see once you click "Download".
+  - Otherwise you may click "No thanks, just take me to the downloads" and download the one titled "OpenDyslexic (Newest)"
+  - On windows,
+    - Extract the zip
+    - double click the .otf 's
+  - On linux,
+    - Extract the zip
+    - copy the .otf files to ~/.local/share/fonts/ (for local install) or /usr/share/fonts/ (for system-wide install)
+    - Linux usually reloads the font cache automatically, though to be on the safe side, you can also `fc-cache -f`
+    - `fc-list | grep -i "OpenDyslexic"` and you should see the fonts.
+
+### Attributions
+- Tong-JT, who started this project for themselves personally.
