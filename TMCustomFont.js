@@ -65,7 +65,7 @@
         fontCustomiserBox.style.position = 'fixed';
         fontCustomiserBox.style.top = '10px';
         fontCustomiserBox.style.right = '10px';
-        fontCustomiserBox.style.zIndex = 1000;
+        fontCustomiserBox.style.zIndex = 10000;
         fontCustomiserBox.style.padding = '20px';
         fontCustomiserBox.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
         fontCustomiserBox.style.color = '#fff';
