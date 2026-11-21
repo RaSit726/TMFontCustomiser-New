@@ -7,6 +7,8 @@
 // @grant        GM_addStyle
 // @grant        GM_addElement
 // @grant        GM_xmlhttpRequest
+// @updateURL    https://github.com/RaSit726/TMFontCustomiser-New/raw/refs/heads/main/TMCustomFont.user.js
+// @downloadURL  https://github.com/RaSit726/TMFontCustomiser-New/raw/refs/heads/main/TMCustomFont.user.js
 // @connect      *
 // ==/UserScript==
 
