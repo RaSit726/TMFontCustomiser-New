@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Font Customiser
 // @namespace    http://tampermonkey.net/
-// @version      1
+// @version      1.1
 // @description  Allows the user to change the font, font size, letter spacing, and line spacing of simple HTML webpage with sliders
 // @match        *://*/*
 // @grant        GM_addStyle
