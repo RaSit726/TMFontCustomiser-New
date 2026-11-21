@@ -8,8 +8,6 @@
 // @grant        GM_addElement
 // @grant        GM_xmlhttpRequest
 // @connect      *
-// @connect      fonts.cdnfonts.com
-// @connect      cdnjs.cloudflare.com
 // ==/UserScript==
 
 (function() {
