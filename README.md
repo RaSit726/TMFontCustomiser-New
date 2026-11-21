@@ -56,7 +56,9 @@ The script will automatically run on the websites that you visit.
 
 ### Installation
 - Selecting all, then copy and pasting is difficult, trust me bro. Take this instead:
-```https://raw.githubusercontent.com/RaSit726/TMFontCustomiser-New/refs/heads/main/TMCustomFont.js```
+```
+https://raw.githubusercontent.com/RaSit726/TMFontCustomiser-New/refs/heads/main/TMCustomFont.js
+```
 - Go into your Tampermonkey dashboard.
 - Then into the tab "utilities" (right hand side).
 - Paste in the link to into the box labeled "Import from URL".
