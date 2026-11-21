@@ -8,6 +8,8 @@
 // @grant        GM_addElement
 // @grant        GM_xmlhttpRequest
 // @connect      *
+// @connect      fonts.cdnfonts.com
+// @connect      cdnjs.cloudflare.com
 // ==/UserScript==
 
 (function() {
@@ -25,6 +27,9 @@
             url: cssUrl,
             onload: async (response) => {
                 let cssText = response.responseText;
+
+                // Convert external/relative font URLs (.woff, .woff2, .ttf) into Base64 data URIs
+                // so strict sites (like GitHub) don't block them via font-src CSP
                 const urlRegex = /url\(['"]?([^'")]+)['"]?\)/g;
                 const matches = [...cssText.matchAll(urlRegex)];
 
@@ -32,6 +37,8 @@
                     const fullMatch = match[0];
                     const rawPath = match[1];
                     if (rawPath.startsWith('data:')) continue;
+
+                    // Resolves both absolute URLs (cdnfonts) and relative paths (Font Awesome ../webfonts/)
                     const absoluteFontUrl = new URL(rawPath, cssUrl).href;
                     const dataUri = await fetchAsDataURL(absoluteFontUrl);
                     if (dataUri) {
@@ -176,9 +183,6 @@
             document.head.appendChild(styleTag);
         }
         styleTag.textContent = `
-            ${string} {
-                ${fontStyle}
-            }
             #font-customisation-box {
                 font-family: Arial, sans-serif !important;
                 font-size: 14px !important;
@@ -192,6 +196,9 @@
                 letter-spacing: normal !important;
                 background-color: #E30B5D !important;
                 color: white !important;
+            }
+            ${string} {
+                ${fontStyle}
             }
         `;
 
@@ -247,9 +254,9 @@
         if (selectedStrength == 0) {
             variableStrengthStyleAdder(fontStyle, `body`, false);
         } else if (selectedStrength == 1) {
-            variableStrengthStyleAdder(fontStyle, `:root:root:root *:not(i):not(.fa):not(.material-icons):not([class*="icon"])`, false);
+            variableStrengthStyleAdder(fontStyle, `:root:root:root *:not(i):not(.fa):not(.material-icons):not([class*="icon"]):not(#font-customisation-box):not(#font-customisation-box *):not(#font-customizer-hover-button):not(#font-customizer-hover-button *)`, false);
         } else if (selectedStrength == 2) {
-            variableStrengthStyleAdder(fontStyle, `:root:root:root *:not(i):not(.fa):not(.material-icons):not([class*="icon"])`, true, selectedFont);
+            variableStrengthStyleAdder(fontStyle, `:root:root:root *:not(i):not(.fa):not(.material-icons):not([class*="icon"]):not(#font-customisation-box):not(#font-customisation-box *):not(#font-customizer-hover-button):not(#font-customizer-hover-button *)`, true, selectedFont);
         }
     }
 
