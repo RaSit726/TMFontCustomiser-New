@@ -55,21 +55,19 @@ The script will automatically run on the websites that you visit.
     - ``fc-list | grep -i "OpenDyslexic"`` and you should see the fonts.
 
 ### Installation
-- Selecting all, then copy and pasting is difficult, trust me bro. Take this instead:
-```
-https://raw.githubusercontent.com/RaSit726/TMFontCustomiser-New/refs/heads/main/TMCustomFont.js
-```
-- Go into your Tampermonkey dashboard.
-- Then into the tab "utilities" (right hand side).
-- Paste in the link to into the box labeled "Import from URL".
-- Click install. It is right of the input box.
+- Make sure to first have gone through the prerequisites before going to the instsallation of this script.
+- find the file in this repo with name `TMCustomFont.user.js`, then click on it.
+- On the top right of the code window you will see a button with text `Raw`. Click that.
+- Tampermonkey should then ask you if you want to install the script. Agree.
 - You now have the script installed. Make sure to give Tampermonkey the appropriate permissions too, and if it asks you to allow to download, look at the URL, and if it looks like something about fonts, allow them then.
+- If it isn't already turned on, turn the script on in the dashboard
 - The script accesses these sites for fonts:
 ```
 "https://fonts.cdnfonts.com/css/open-dyslexic",
 "https://fonts.cdnfonts.com/css/open-sans",
 "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
 ```
+- This script should be auto-updating, so going back to here is not necessary unless something breaks.
 
 ### Usage
 - A red dot, usually containing an "A", but sometimes nothing or an unknown character box, should appear on the bottom right corner of the website viewport.
