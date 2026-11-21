@@ -69,7 +69,30 @@ The script will automatically run on the websites that you visit.
 "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
 ```
 
+### Usage
+- A red dot, usually containing an "A", but sometimes nothing or an unknown character box, should appear on the bottom right corner of the website viewport.
+- Clicking on it reveals a menu on the top right. From there,
+  - You can set the strength (category)
+  - Set the font (category)
+  - Line Spacing (slider)
+  - Letter Spacing (slider)
+  - Font Size (slider)
+- If it does not modify the text on the site,
+  - Try to first switch from strength "Soft" to "Force"
+  - Then only to "Nuclear Option"
+  - If you see that the slider values modify the text even at the higher levels while not the fonts, this means that the website most probably has font-src restrictions.
+    - To bypass, switching to a font installed on the system (Like OpenDyslexic (as system font)), usually fixes this.
+    - If not, well shit. Open a github issue. Maybe I'll fix it.
+
 ### Attributions
 - Tong-JT, who started this project for themselves personally.
 - Abbie Gonzalez (Antijingoist), for the OpenDyslexic font.
 - Jan Biniok for making Tampermonkey, which this whole thing leans upon.
+
+
+### Fork's History
+- Made on the 21st November, 2026
+- And completed by then.
+
+### Support
+- Maybe
